@@ -1,0 +1,17 @@
+project Default is
+
+   package Compiler is
+      for Default_Switches ("ada") use ("-g", "-O2");
+   end Compiler;
+
+   package Linker is
+      for Default_Switches ("ada") use ("-lusb-1.0");
+   end Linker;
+
+   for Source_Dirs use (".", "tests");
+   for Object_Dir use "./build";
+   for Source_Files use ("initexit.adb", "usb.ads", "usb-libusb1.ads");
+   for Main use ("initexit.adb");
+
+end Default;
+
