@@ -28,9 +28,9 @@ begin
       --return;
    else
       declare
-         Dev_Array: Device_Access_Array(0..Cnt-1);
+         Dev_Array: Device_Access_Array :=
+          Device_Access_Lists.Value(Devs, Interfaces.C.ptrdiff_t(Cnt));
       begin
-         Dev_Array := Device_Access_Lists.Value(Devs, Interfaces.C.ptrdiff_t(Cnt));
          Put(Integer(Cnt));
          Put_Line(" devices listed");
          for I in Dev_Array'Range loop

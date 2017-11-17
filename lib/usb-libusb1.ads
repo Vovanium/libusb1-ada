@@ -85,11 +85,11 @@ package USB.LibUSB1 is
     Default_Terminator => Device_Access(System.Null_Address));
 
    type Speed is (
-      Unknown,
-      Low,
-      Full,
-      High,
-      Super
+      Speed_Unknown,
+      Speed_Low,
+      Speed_Full,
+      Speed_High,
+      Speed_Super
    );
    for Speed use (
       0,
@@ -130,13 +130,6 @@ package USB.LibUSB1 is
    Full_Speed_Operation: constant Supported_Speed := 2;
    High_Speed_Operation: constant Supported_Speed := 4;
    Super_Speed_Operation: constant Supported_Speed := 8;
-
-   type USB_2_0_Extension_Attributes is new Attributes;
-   pragma Convention(C, USB_2_0_Extension_Attributes);
-   BM_LPM_Support: constant USB_2_0_Extension_Attributes := 2;
-
-   type SS_USB_Device_Capability_Attributes is mod 2**32;
-   pragma Convention(C, SS_USB_Device_Capability_Attributes);
 
    type BOS_Type is (
       Wireless_USB_Device_Capability,
@@ -187,7 +180,7 @@ package USB.LibUSB1 is
    pragma Import(C, Get_Device_Speed, "libusb_get_device_speed");
 
    function Get_Max_Packet_Size(Dev: Device_Access;
-    Endpoint: unsigned_char) return int;
+    Endpoint: unsigned_char) return int; -- ?? endpoint address?
    pragma Import(C, Get_Max_Packet_Size, "libusb_get_max_packet_size");
 
    function Get_Max_Iso_Packet_Size(Dev: Device_Access;
@@ -259,4 +252,289 @@ package USB.LibUSB1 is
     Enable: int) return Status;
    pragma Import(C, Set_Auto_Detach_Kernel_Driver,
     "libusb_set_auto_detach_kernel_driver");
+
+   ---- Descriptors
+
+   type Descriptor_Type is (
+      DT_Device,      DT_Config,
+      DT_String,      DT_Interface,
+      DT_Endpoint,      DT_BOS,
+      DT_Device_Capability,      DT_HID,
+      DT_Report,      DT_Physical,
+
+      DT_Hub,      DT_Superspeed_Hub,
+      DT_SS_Endpoint_Companion
+   );
+   for Descriptor_Type use (
+      16#01#, 16#02#,
+      16#03#, 16#04#,
+      16#05#, 16#0F#,
+      16#10#, 16#21#,
+      16#22#, 16#23#,
+
+      16#29#, 16#2A#,
+      16#30#
+   );
+   for Descriptor_Type'Size use 8;
+
+   type Class_Code is (
+      Class_Per_Interface,  Class_Audio,
+      Class_Comm,           Class_HID,
+      Class_Physical,       Class_Image,
+      Class_Printer,        Class_Mass_Storage,
+      Class_Hub,            Class_Data,
+
+      CLass_Smart_Card,     Class_Content_Security,
+      Class_Video,          Class_Personal_Healthcare,
+      Class_Diagnostic_Device, Class_Wireless,
+      Class_Application,    Class_Vendor_Spec
+   );
+   for Class_Code use (
+      16#00#, 16#01#,
+      16#02#, 16#03#,
+      16#05#, 16#06#,
+      16#07#, 16#08#,
+      16#09#, 16#0A#,
+
+      16#0B#, 16#0D#,
+      16#0E#, 16#0F#,
+      16#DC#, 16#E0#,
+      16#FE#, 16#FF#
+   );
+   for Class_Code'Size use 8;
+   -- pragma Convention(C, Class_Code);
+
+   type UInt8 is range 0..2**8-1;
+   for UInt8'Size use 8;
+   pragma Convention(C, UInt8);
+
+   type UInt16 is range 0..2**16-1;
+   for UInt16'Size use 16;
+   pragma Convention(C, UInt16);
+
+   type Endpoint_Address is mod 2**8;
+   for Endpoint_Address'Size use 8;
+   pragma Convention(C, Endpoint_Address);
+
+   Endpoint_In: constant Endpoint_Address := 16#80#;
+   Endpoint_Out: constant Endpoint_Address := 16#00#;
+
+   type Transfer_Type is (
+      Transfer_Type_Control, Transfer_Type_Isochronous,
+      Transfer_Type_Bulk, Transfer_Type_Interrupt
+      -- Transfer_Type_Bulk_Stream -- Currently unsupported
+   );
+   for Transfer_Type use (
+      0, 1,
+      2, 3
+   );
+   pragma Convention(C, Transfer_Type);
+
+   type Iso_Sync_Type is (
+      Iso_Sync_Type_None, Iso_Sync_Type_Async,
+      Iso_Sync_Type_Adaptive, Iso_Sync_Type_Sync
+   );
+   for Iso_Sync_Type use (
+      0, 1,
+      2, 3
+   );
+   pragma Convention(C, Iso_Sync_Type);
+
+   type Iso_Usage_Type is (
+      Iso_Usage_Type_Data, Iso_Usage_Type_Feedback,
+      Iso_Usage_Type_Implicit
+   );
+   pragma Convention(C, Iso_Usage_Type);
+
+
+
+   type Device_Descriptor is record
+      Length: UInt8;
+      bDescriptorType: Descriptor_Type;
+      bcdUSB: UInt16;
+      bDeviceClass: Class_Code;
+      bDeviceSubClass: UInt8; -- Should be distinct type
+      bDeviceProtocol: UInt8; -- Should be distinct type
+      bMaxPacketSize0: UInt8;
+      idVendor: UInt16;
+      idProduct: UInt16;
+      bcdDevice: UInt16;
+      iManufacturer: UInt8;
+      iProduct: UInt8;
+      iSerialNumber: UInt8;
+      bNumConfigurations: UInt8;
+   end record;
+   pragma Convention(C, Device_Descriptor);
+
+   type Endpoint_Attributes is record
+      Transfer_Type: USB.LibUSB1.Transfer_Type;
+      Iso_Sync_Type: USB.LibUSB1.Iso_Sync_Type;
+      Iso_Usage_Type: USB.LibUSB1.Iso_Usage_Type;
+   end record;
+   for Endpoint_Attributes use record
+      Transfer_Type at 0 range 0..1;
+      Iso_Sync_Type at 0 range 2..3;
+      Iso_Usage_Type at 0 range 4..5;
+   end record;
+   for Endpoint_Attributes'Size use 8;
+   pragma Convention(C, Endpoint_Attributes);
+
+   type Endpoint_Descriptor is record
+      bLength: UInt8;
+      bDescriptorType: Descriptor_Type;
+      bEndpointAddress: Endpoint_Address;
+      bmAttributes: Endpoint_Attributes;
+      wMaxPacketSize: UInt16;
+      bInterval: UInt8;
+      bRefresh: UInt8;
+      bSynchAddress: UInt8;
+      Extra: System.Address;
+      Extra_Length: Integer;
+   end record;
+   pragma Convention(C, Endpoint_Descriptor);
+
+   type Endpoint_Descriptor_Array is array(Integer range <>) of
+    aliased Endpoint_Descriptor;
+
+   Endpoint_Descriptor_Default_Terminator: constant Endpoint_Descriptor := (
+      0, DT_Endpoint, 0, (
+         Transfer_Type_Control, Iso_Sync_Type_None, Iso_Usage_Type_Data
+      ), 0, 0, 0, 0,
+      System.Null_Address, 0
+   ); -- just for pointers to compile
+
+   package Endpoint_Descriptor_Lists is new Interfaces.C.Pointers(
+    Index => Integer,
+    Element => Endpoint_Descriptor,
+    Element_Array => Endpoint_Descriptor_Array,
+    Default_Terminator => Endpoint_Descriptor_Default_Terminator);
+
+   type Interface_Descriptor is record
+      bLength: UInt8;
+      bDescriptorType: Descriptor_Type;
+      bInterfaceNumber: UInt8;
+      bAlternateSetting: UInt8;
+      bNumEndpoints: UInt8;
+      bInterfaceClass: Class_Code;
+      bInterfaceSubClass: UInt8;
+      bInterfaceProtocol: UInt8;
+      iInterface: UInt8;
+      Endpoint: Endpoint_Descriptor_Lists.Pointer;
+      Extra: System.Address;
+      Extra_Length: Integer;
+   end record;
+   pragma Convention(C, Interface_Descriptor);
+
+   type Interface_List is record
+      AltSetting: Endpoint_Descriptor_Lists.Pointer;
+      Num_AltSetting: Integer;
+   end record;
+
+   type Config_Descriptor is record
+      bLength: UInt8;
+      bDescriptorType: USB.LibUSB1.Descriptor_Type;
+      wTotalLength: UInt16;
+      bNumInterfaces: UInt8;
+      bConfigurationValue: UInt8;
+      iConfiguration: UInt8;
+      Attributes: UInt8;
+      MaxPower: Uint8;
+      Interface_List: USB.LibUSB1.Interface_List;
+      Extra: System.Address;
+      Extra_Length: Integer;
+   end record;
+   pragma Convention(C, Config_Descriptor);
+
+   type SS_Endpoint_Companion_Attributes is mod 2**8;
+   for SS_Endpoint_Companion_Attributes'Size use 8;
+   pragma Convention(C, SS_Endpoint_Companion_Attributes);
+
+   type SS_Endpoint_Companion_Descriptor is record
+      bLength: UInt8;
+      bDescriptorType: Descriptor_Type;
+      bMaxBurst: UInt8;
+      bmAttributes: SS_Endpoint_Companion_Attributes;
+      wBytesPerInterval: UInt16;
+   end record;
+   pragma Convention(C, SS_Endpoint_Companion_Descriptor);
+
+   type BOS_Dev_Capability_Data_Array is array (0..-1) of UInt8;
+   pragma Convention(C, BOS_Dev_Capability_Data_Array);
+
+   type BOS_Dev_Capability_Descriptor is record
+      bLength: UInt8;
+      bDescriptorType: Descriptor_Type;
+      bDevCapabilityType: UInt8;
+      Dev_Capability_Data: BOS_Dev_Capability_Data_Array;
+   end record;
+   pragma Convention(C, BOS_Dev_Capability_Descriptor);
+
+   type BOS_Dev_Capability_Descriptor_Array is array (0..-1)
+    of BOS_Dev_Capability_Descriptor;
+   pragma Convention(C, BOS_Dev_Capability_Descriptor_Array);
+
+   type BOS_Descriptor is record
+      bLength: UInt8;
+      bDescriptorType: Descriptor_Type;
+      wTotalLength: UInt16;
+      bNumDeviceCaps: UInt8;
+      Dev_Capability: BOS_Dev_Capability_Descriptor_Array;
+   end record;
+   pragma Convention(C, BOS_Descriptor);
+
+   pragma Warnings (Off, "24 bits of ""USB_2_0_Extension_Attributes"" unused");
+   type USB_2_0_Extension_Attributes is record
+      LPM_Support: Boolean;
+   end record;
+   for USB_2_0_Extension_Attributes use record
+      LPM_Support at 0 range 1..1;
+   end record;
+   for USB_2_0_Extension_Attributes'Size use 32;
+   pragma Convention(C, USB_2_0_Extension_Attributes);
+   pragma Warnings (On, "24 bits of ""USB_2_0_Extension_Attributes"" unused");
+
+   type USB_2_0_Extension_Descriptor is record
+      bLength: UInt8;
+      bDescriptorType: Descriptor_Type;
+      bDevCapabilityType: UInt8;
+      bmAttributes: USB_2_0_Extension_Attributes;
+   end record;
+   pragma Convention(C, USB_2_0_Extension_Descriptor);
+
+   type SS_USB_Device_Capability_Attributes is record
+      LTM_Support: Boolean;
+   end record;
+   for SS_USB_Device_Capability_Attributes use record
+      LTM_Support at 0 range 1..1;
+   end record;
+   for SS_USB_Device_Capability_Attributes'Size use 8;
+   pragma Convention(C, SS_USB_Device_Capability_Attributes);
+
+   type SS_USB_Device_Capability_Speed_Supported is mod 2**16;
+   for SS_USB_Device_Capability_Speed_Supported'Size use 16;
+   pragma Convention(C, SS_USB_Device_Capability_Speed_Supported);
+
+   type SS_USB_Device_Capability_Descriptor is record
+      bLength: UInt8;
+      bDescriptorType: Descriptor_Type;
+      bDevCapabilityType: UInt8;
+      bmAttributes: SS_USB_Device_Capability_Attributes;
+      wSpeedSupported: SS_USB_Device_Capability_Speed_Supported;
+      bFunctionalitySupport: UInt8;
+      bU1DevExitLat: UInt8;
+      bU2DevExitLat: UInt16;
+   end record;
+   pragma Convention(C, SS_USB_Device_Capability_Descriptor);
+
+   type UUID is array (0..15) of UInt8;
+
+   type Container_Id_Descriptor is record
+      bLength: UInt8;
+      bDescriptorType: Descriptor_Type;
+      bDevCapabilityType: UInt8;
+      bReserved: UInt8;
+      ContainerID: UUID;
+   end record;
+   pragma Convention(C, Container_Id_Descriptor);
+
 end USB.LibUSB1;
