@@ -1,5 +1,6 @@
 with USB;
 with USB.LibUSB1;
+with USB.Protocol;
 with Interfaces.C;
 with Ada.Text_IO;
 with Ada.Integer_Text_IO;
@@ -31,7 +32,7 @@ begin
       declare
          Dev_Array: Device_Access_Array :=
           Device_Access_Lists.Value(Devs, Interfaces.C.ptrdiff_t(Cnt));
-         Desc: aliased Device_Descriptor;
+         Desc: aliased USB.Protocol.Device_Descriptor;
          Path: Port_Number_Array(0..7);
       begin
          Put(Integer(Cnt));
