@@ -6,7 +6,7 @@ project Default is
    for Languages use ("Ada");
 
    package Compiler is
-      for Default_Switches ("ada") use ("-g", "-O2");
+      for Default_Switches ("ada") use ("-g", "-O2", "-gnat12");
    end Compiler;
 
    package Linker is
