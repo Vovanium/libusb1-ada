@@ -9,6 +9,7 @@ use USB.LibUSB1;
 procedure List_Devices_C is
    Ctx: aliased Context_Access;
    R: Status;
+   Ri: Integer;
    Cnt: ssize_t;
    Devs: aliased Device_Access_Lists.Pointer;
 begin
@@ -30,13 +31,31 @@ begin
       declare
          Dev_Array: Device_Access_Array :=
           Device_Access_Lists.Value(Devs, Interfaces.C.ptrdiff_t(Cnt));
+         Desc: aliased Device_Descriptor;
+         Path: Port_Number_Array(0..7);
       begin
          Put(Integer(Cnt));
          Put_Line(" devices listed");
          for I in Dev_Array'Range loop
-            Put(Integer(I), 3);
+            Put(Integer(I-Dev_Array'First), 3);
             Put(Integer(Get_Bus_Number(Dev_Array(I))), 4);
             Put(Integer(Get_Device_Address(Dev_Array(I))), 4);
+            R := Get_Device_Descriptor(Dev_Array(I), Desc'Access);
+            if R /= Success then
+               Put("Failed to get device descriptor: " & Status'Image(R));
+            else
+               Put(Integer(Desc.idVendor), 10, 16);
+               Put(Integer(Desc.idProduct), 10, 16);
+               Ri := Integer(Get_Port_Numbers(Dev_Array(I),
+                  Path(0)'Unrestricted_Access, -- do not know how to do right
+                  Path'Length));
+               if Ri > 0 then
+                  Put(" path: ");
+                  for I in 0 .. Ri-1 loop
+                     Put(Integer(Path(I)), 4);
+                  end loop;
+               end if;
+            end if;
             New_Line;
          end loop;
       end;
