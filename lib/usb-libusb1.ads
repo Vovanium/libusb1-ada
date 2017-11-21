@@ -1,6 +1,7 @@
 with Interfaces;
 with Interfaces.C;
 with Interfaces.C.Pointers;
+with Interfaces.C.Strings;
 with System;
 with USB.Protocol;
 
@@ -117,22 +118,6 @@ package USB.LibUSB1 is
    type Device_Address is mod 2**8;
    pragma Convention(C, Device_Address);
 
-   type Vendor_Id is mod 2**16;
-   pragma Convention(C, Vendor_Id);
-
-   type Product_Id is mod 2**16;
-   pragma Convention(C, Product_Id);
-
-   type Attributes is mod 2**32;  -- How to set it to size of C enum?
-   for Attributes'Size use int'Size;
-   pragma Convention(C, Attributes);
-   type Supported_Speed is new Attributes;
-   pragma Convention(C, Supported_Speed);
-   Low_Speed_Operation: constant Supported_Speed := 1;
-   Full_Speed_Operation: constant Supported_Speed := 2;
-   High_Speed_Operation: constant Supported_Speed := 4;
-   Super_Speed_Operation: constant Supported_Speed := 8;
-
    function Get_Device_List(Ctx: Context_Access;
     List: access Device_Access_Lists.Pointer) return ssize_t;
    pragma Import(C, Get_Device_List, "libusb_get_device_list");
@@ -185,8 +170,8 @@ package USB.LibUSB1 is
    pragma Import(C, Open, "libusb_open");
 
    function Open_Device_with_VID_PID(Ctx: Context_Access;
-    VID: Vendor_Id;
-    PID: Product_Id) return Device_Handle_Access;
+    VID: USB.Protocol.Vendor_Id;
+    PID: USB.Protocol.Product_Id) return Device_Handle_Access;
    pragma Import(C, Open_Device_with_VID_PID,
     "libusb_open_device_with_vid_pid");
 
@@ -244,16 +229,39 @@ package USB.LibUSB1 is
 
    API_Version: constant Integer := 16#01000104#;
 
+   type Lib_Capability is (
+      Cap_Has_Capability, Cap_Has_Hotplug,
+      Cap_Has_HID_Access, Cap_Supports_Detach_Kernel_Driver
+   );
+   for Lib_Capability use (
+      16#0000#, 16#0001#,
+      16#0100#, 16#0101#
+   );
+   pragma Convention(C, Lib_Capability);
+
+   type Version_Number is mod 2**16 with Size => 16, Convention => C;
+
+   type Lib_Version is record
+      Major, Minor, Micro, Nano: Version_Number;
+      Rc, Describe: Strings.chars_ptr;
+   end record;
+
+   function Has_Capability(Capability: Lib_Capability) return int;
+   pragma Import(C, Has_Capability, "libusb_has_capability");
+
+   function Error_Name(Error_Code: int) return Strings.chars_ptr;
+   pragma Import(C, Error_Name, "libusb_error_name");
+
+   function Get_Version return access constant Lib_Version;
+   pragma Import(C, Get_Version, "libusb_get_version");
+
+   function SetLocale(Locale: Strings.chars_ptr) return Status;
+   pragma Import(C, SetLocale, "libusb_setlocale");
+
+   function StrError(errcode: Status) return Strings.chars_ptr;
+   pragma Import(C, StrError, "libusb_strerror");
 
    ---- Descriptors
-
-   type UInt8 is range 0..2**8-1;
-   for UInt8'Size use 8;
-   pragma Convention(C, UInt8);
-
-   type UInt16 is range 0..2**16-1;
-   for UInt16'Size use 16;
-   pragma Convention(C, UInt16);
 
    type Transfer_Type is (
       Transfer_Type_Control, Transfer_Type_Isochronous,
@@ -268,7 +276,7 @@ package USB.LibUSB1 is
    pragma Convention(C, Transfer_Type);
 
    type Endpoint_Descriptor is record
-      Descriptor: Endpoint_Descriptors.Descriptor;
+      Descriptor: USB.Protocol.Endpoint_Descriptor;
       bRefresh: UInt8;
       bSynchAddress: UInt8;
       Extra: System.Address;
@@ -295,15 +303,7 @@ package USB.LibUSB1 is
     Default_Terminator => Endpoint_Descriptor_Default_Terminator);
 
    type Interface_Descriptor is record
-      bLength: UInt8;
-      bDescriptorType: Descriptor_Type;
-      bInterfaceNumber: UInt8;
-      bAlternateSetting: UInt8;
-      bNumEndpoints: UInt8;
-      bInterfaceClass: Class_Code;
-      bInterfaceSubClass: UInt8;
-      bInterfaceProtocol: UInt8;
-      iInterface: UInt8;
+      Descriptor: USB.Protocol.Interface_Descriptor;
       Endpoint: Endpoint_Descriptor_Lists.Pointer;
       Extra: System.Address;
       Extra_Length: Integer;
@@ -315,52 +315,45 @@ package USB.LibUSB1 is
       Num_AltSetting: Integer;
    end record;
 
-   type Config_Descriptor is record
-      bLength: UInt8;
-      bDescriptorType: USB.Protocol.Descriptor_Type;
-      wTotalLength: UInt16;
-      bNumInterfaces: UInt8;
-      bConfigurationValue: UInt8;
-      iConfiguration: UInt8;
-      Attributes: UInt8;
-      MaxPower: Uint8;
+   type Configuration_Descriptor is record
+      Descriptor: USB.Protocol.Configuration_Descriptor;
       Interface_List: USB.LibUSB1.Interface_List;
       Extra: System.Address;
       Extra_Length: Integer;
    end record;
-   pragma Convention(C, Config_Descriptor);
+   pragma Convention(C, Configuration_Descriptor);
 
-   type Config_Descriptor_Access is access all Config_Descriptor;
-   pragma Convention(C, Config_Descriptor_Access);
+   type Configuration_Descriptor_Access is access all Configuration_Descriptor;
+   pragma Convention(C, Configuration_Descriptor_Access);
 
    type SS_Endpoint_Companion_Descriptor_Access is
-    access all Superspeed_Endpoint_Companion_Descriptors.Descriptor;
+    access all Superspeed_Endpoint_Companion_Descriptor;
    pragma Convention(C, SS_Endpoint_Companion_Descriptor_Access);
 
    type BOS_Descriptor_Access is access all BOS_Descriptor;
    pragma Convention(C, BOS_Descriptor_Access);
 
    type USB_2_0_Extension_Descriptor_Access is
-    access all USB_2_0_Extension_Descriptors.Descriptor;
+    access all USB_2_0_Extension_Descriptor;
    pragma Convention(C, USB_2_0_Extension_Descriptor_Access);
 
    type SS_USB_Device_Capability_Descriptor_Access is
-    access all Superspeed_USB_Device_Capability_Descriptors.Descriptor;
+    access all Superspeed_USB_Device_Capability_Descriptor;
    pragma Convention(C, SS_USB_Device_Capability_Descriptor_Access);
 
    type Container_Id_Descriptor_Access is
-    access all Container_Id_Descriptors.Descriptor;
+    access all Container_Id_Descriptor;
    pragma Convention(C, Container_Id_Descriptor_Access);
 
    function Get_Device_Descriptor(
       Dev: Device_Access;
-      Desc: access Device_Descriptor
+      Desc: out Device_Descriptor
    ) return Status;
    pragma Import(C, Get_Device_Descriptor, "libusb_get_device_descriptor");
 
    function Get_Active_Config_Descriptor(
       Dev: Device_Access;
-      Config: access Config_Descriptor_Access
+      Config: access Configuration_Descriptor_Access
    ) return Status;
    pragma Import(C, Get_Active_Config_Descriptor,
       "libusb_get_active_config_descriptor");
@@ -368,25 +361,25 @@ package USB.LibUSB1 is
    function Get_Config_Descriptor(
       Dev: Device_Access;
       Config_Index: UInt8;
-      Config: access Config_Descriptor_Access
+      Config: out Configuration_Descriptor_Access
    ) return Status;
    pragma Import(C, Get_Config_Descriptor, "libusb_get_config_descriptor");
 
    function Get_Config_Descriptor_by_Value(
       Dev: Device_Access;
       bConfigurationValue: UInt8;
-      Config: access Config_Descriptor_Access
+      Config: out Configuration_Descriptor_Access
    ) return Status;
    pragma Import(C, Get_Config_Descriptor_by_Value,
       "libusb_get_config_descriptor_by_value");
 
-   procedure Free_Config_Descriptor(Config: Config_Descriptor_Access);
+   procedure Free_Config_Descriptor(Config: Configuration_Descriptor_Access);
    pragma Import(C, Free_Config_Descriptor, "libusb_free_config_descriptor");
 
    function Get_SS_Endpoint_Companion_Descriptor(
       Ctx: Context_Access;
       Endpoint: access Endpoint_Descriptor;
-      Ep_Comp: access SS_Endpoint_Companion_Descriptor_Access
+      Ep_Comp: out SS_Endpoint_Companion_Descriptor_Access
    ) return Status;
    pragma Import(C, Get_SS_Endpoint_Companion_Descriptor,
       "libusb_get_ss_endpoint_companion_descriptor");
@@ -399,7 +392,7 @@ package USB.LibUSB1 is
 
    function Get_BOS_Descriptor(
       Handle: Device_Handle_Access;
-      BOS: access BOS_Descriptor_Access
+      BOS: out BOS_Descriptor_Access
    ) return Status;
    pragma Import(C, Get_BOS_Descriptor, "libusb_get_bos_descriptor");
 
@@ -409,7 +402,7 @@ package USB.LibUSB1 is
    function Get_USB_2_0_Extension_Descriptor(
       Ctx: Context_Access;
       Dev_Cap: access BOS_Device_Capability_Descriptor;
-      USB_2_0_Extension: access USB_2_0_Extension_Descriptor_Access
+      USB_2_0_Extension: out USB_2_0_Extension_Descriptor_Access
    ) return Status;
    pragma Import(C, Get_USB_2_0_Extension_Descriptor,
       "libusb_get_usb_2_0_endpoint_descriptor");
@@ -423,7 +416,7 @@ package USB.LibUSB1 is
    function Get_SS_USB_Device_Capability_Descriptor(
       Ctx: Context_Access;
       Dev_Cap: access BOS_Device_Capability_Descriptor;
-      SS_USB_Device_Cap: access SS_USB_Device_Capability_Descriptor_Access
+      SS_USB_Device_Cap: out SS_USB_Device_Capability_Descriptor_Access
    ) return Status;
    pragma Import(C, Get_SS_USB_Device_Capability_Descriptor,
       "libusb_get_ss_usb_device_capability_descriptor");
@@ -437,7 +430,7 @@ package USB.LibUSB1 is
    function Get_Container_Id_Descriptor(
       Ctx: Context_Access;
       Dev_Cap: access BOS_Device_Capability_Descriptor;
-      Container_Id: access Container_Id_Descriptor_Access
+      Container_Id: out Container_Id_Descriptor_Access
    ) return Status;
    pragma Import(C, Get_Container_Id_Descriptor,
       "libusb_get_container_id_descriptor");

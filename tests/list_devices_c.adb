@@ -41,7 +41,7 @@ begin
             Put(Integer(I-Dev_Array'First), 3);
             Put(Integer(Get_Bus_Number(Dev_Array(I))), 4);
             Put(Integer(Get_Device_Address(Dev_Array(I))), 4);
-            R := Get_Device_Descriptor(Dev_Array(I), Desc'Access);
+            R := Get_Device_Descriptor(Dev_Array(I), Desc);
             if R /= Success then
                Put("Failed to get device descriptor: " & Status'Image(R));
             else

@@ -129,6 +129,12 @@ package USB.Protocol is
       48
    );
 
+   type Vendor_Id is mod 2**16;
+   pragma Convention(C, Vendor_Id);
+
+   type Product_Id is mod 2**16;
+   pragma Convention(C, Product_Id);
+
    -- Per Table 9-11 of USB 3.2 rev 1.0
    type Device_Descriptor is record
       bLength: UInt8;
@@ -138,8 +144,8 @@ package USB.Protocol is
       bDeviceSubClass: UInt8; -- Should be distinct type
       bDeviceProtocol: UInt8; -- Should be distinct type
       bMaxPacketSize0: UInt8;
-      idVendor: UInt16;
-      idProduct: UInt16;
+      idVendor: Vendor_Id;
+      idProduct: Product_Id;
       bcdDevice: UInt16;
       iManufacturer: UInt8;
       iProduct: UInt8;
@@ -216,6 +222,9 @@ package USB.Protocol is
       pragma Convention(C, Descriptor);
    end USB_2_0_Extension_Descriptors;
 
+   subtype USB_2_0_Extension_Descriptor
+    is USB_2_0_Extension_Descriptors.Descriptor;
+
    -- Per Table 9-16 of USB 2.3 rev 1.0
    package Superspeed_USB_Device_Capability_Descriptors is
       type Attributes is record
@@ -263,9 +272,12 @@ package USB.Protocol is
          bFunctionalitySupport: Functionality_Support;
          bU1DevExitLat: UInt8;
          bU2DevExitLat: UInt16;
-      end record;
+      end record with Size => 10*8;
       pragma Convention(C, Descriptor);
    end Superspeed_USB_Device_Capability_Descriptors;
+
+   subtype Superspeed_USB_Device_Capability_Descriptor
+    is Superspeed_USB_Device_Capability_Descriptors.Descriptor;
 
    -- Per Table 9-17 of USB 2.3 rev 1.0
    package Container_Id_Descriptors is
@@ -277,10 +289,56 @@ package USB.Protocol is
          bDevCapabilityType: BOS_Device_Capability_Type;
          bReserved: UInt8;
          ContainerID: UUID;
-      end record;
+      end record with Size => 20*8;
       pragma Convention(C, Descriptor);
    end Container_Id_Descriptors;
 
+   subtype Container_Id_Descriptor is Container_Id_Descriptors.Descriptor;
+
+   -- Per Table 9-22 of USB 2.3 rev 1.0
+   package Configuration_Descriptors is
+      type Attributes is record
+         Remote_Wakeup: Boolean;
+         Self_Powered: Boolean;
+         Set_True: Boolean;
+      end record;
+      for Attributes use record
+         Remote_Wakeup at 0 range 5..5;
+         Self_Powered at 0 range 6..6;
+         Set_True at 0 range 7..7;
+      end record;
+      for Attributes'Size use 8;
+
+      type Descriptor is record
+         bLength: UInt8;
+         bDescriptorType: USB.Protocol.Descriptor_Type;
+         wTotalLength: UInt16;
+         bNumInterfaces: UInt8;
+         bConfigurationValue: UInt8;
+         iConfiguration: UInt8;
+         bmAttributes: Attributes;
+         bMaxPower: Uint8;
+      end record with Size => 9*8;
+   end Configuration_Descriptors;
+
+   subtype Configuration_Descriptor is Configuration_Descriptors.Descriptor;
+
+   -- Per Table 9-24 of USB 2.3 rev 1.0
+   package Interface_Descriptors is
+      type Descriptor is record
+         bLength: UInt8;
+         bDescriptorType: Descriptor_Type;
+         bInterfaceNumber: UInt8;
+         bAlternateSetting: UInt8;
+         bNumEndpoints: UInt8;
+         bInterfaceClass: Class_Code;
+         bInterfaceSubClass: UInt8;
+         bInterfaceProtocol: UInt8;
+         iInterface: UInt8;
+      end record with Size => 9*8;
+   end Interface_Descriptors;
+
+   subtype Interface_Descriptor is Interface_Descriptors.Descriptor;
 
    -- !!!should be record (7 bit number + 1 bit direction)
    type Endpoint_Address is mod 2**8;
@@ -334,9 +392,11 @@ package USB.Protocol is
          bmAttributes: Attributes;
          wMaxPacketSize: UInt16;
          bInterval: UInt8;
-      end record;
+      end record with Size => 7*8;
       pragma Convention(C, Descriptor);
    end Endpoint_Descriptors;
+
+   subtype Endpoint_Descriptor is Endpoint_Descriptors.Descriptor;
 
    -- Per Table 9-27 of USB 2.3 rev 1.0
    package Superspeed_Endpoint_Companion_Descriptors is
@@ -350,9 +410,12 @@ package USB.Protocol is
          bMaxBurst: UInt8;
          bmAttributes: Attributes;
          wBytesPerInterval: UInt16;
-      end record;
+      end record with Size => 6*8;
       pragma Convention(C, Descriptor);
    end Superspeed_Endpoint_Companion_Descriptors;
+
+   subtype Superspeed_Endpoint_Companion_Descriptor is
+    Superspeed_Endpoint_Companion_Descriptors.Descriptor;
 
 end USB.Protocol;
 
