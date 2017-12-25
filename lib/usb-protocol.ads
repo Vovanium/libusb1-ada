@@ -6,31 +6,45 @@ package USB.Protocol is
    -- Those types are used in structures
 
    -- Per Table 9-3 USB 3-2 rev 1.0
+   type Request_Type_Code is (
+      Request_Type_Standard, Request_Type_Class,
+      Request_Type_Vendor, Request_Type_Reserved
+   );
+   for Request_Type_Code use (
+      16#00#, 16#01#,
+      16#02#, 16#03#
+   );
+
+   type Request_Recipient is (
+      Recipient_Device, Recipient_Interface,
+      Recipient_Endpoint, Recipient_Other,
+      Recipient_Vendor_Specific
+   );
+   for Request_Recipient use (
+      0, 1,
+      2, 3,
+      31
+   );
    type Transfer_Direction is (
       Direction_Host_to_Device, Direction_Device_to_Host
    );
    for Transfer_Direction use (0, 1);
 
-   -- This cannot be made record due to argument passing convention
-   type Request_Type is mod 2**8;
+   type Request_Type is record
+      Recipient: Request_Recipient;
+      Code: Request_Type_Code;
+      Direction: Transfer_Direction;
+   end record;
+   for Request_Type use record
+      Recipient at 0 range 0..4;
+      Code at 0 range 5..6;
+      Direction at 0 range 7..7;
+   end record;
    for Request_Type'Size use 8;
-   pragma Convention(C, Request_Type);
-
-   Recipient_Device: constant Request_Type := 0;
-   Recipient_Interface: constant Request_Type :=  1;
-   Recipient_Endpoint: constant Request_Type := 2;
-   Recipient_Other: constant Request_Type := 3;
-   Recipient_Vendor_Specific: constant Request_Type := 31;
-   Request_Type_Standard: constant Request_Type := 0 * 2**5;
-   Request_Type_Class: constant Request_Type := 1 * 2**5;
-   Request_Type_Vendor: constant Request_Type := 2 * 2**5;
-   Request_Type_Reserved: constant Request_Type := 3 * 2**5;
-   Endpoint_Out: constant Request_Type := 0 * 2**7;
-   Endpoint_In: constant Request_Type := 1 * 2**7;
+   pragma Convention(C_Pass_by_Copy, Request_Type);
 
    type Request_Code is mod 2**8;
    for Request_Code'Size use 8;
-
 
    -- Standard requests
    type Standard_Request_Code is (
@@ -193,7 +207,7 @@ package USB.Protocol is
       for Attributes use record
          LPM at 0 range 1..1;
       end record;
-      pragma Convention(C, Attributes);
+      pragma Convention(C_Pass_by_Copy, Attributes);
       pragma Warnings (On, "24 bits of ""Attributes"" unused");
 
       type Descriptor is record
@@ -217,7 +231,7 @@ package USB.Protocol is
          LTM_Capable at 0 range 1..1;
       end record;
       for Attributes'Size use 8;
-      pragma Convention(C, Attributes);
+      pragma Convention(C_Pass_by_Copy, Attributes);
 
       pragma Warnings (Off, "8 bits of ""Speeds_Supported"" unused");
       type Speeds_Supported is record
@@ -233,7 +247,7 @@ package USB.Protocol is
          Gen1 at 0 range 3..3;
       end record;
       for Speeds_Supported'Size use 16;
-      pragma Convention(C, Speeds_Supported);
+      pragma Convention(C_Pass_by_Copy, Speeds_Supported);
       pragma Warnings (On, "8 bits of ""Speeds_Supported"" unused");
 
       type Functionality_Support is (
@@ -284,13 +298,13 @@ package USB.Protocol is
          Remote_Wakeup: Boolean;
          Self_Powered: Boolean;
          Set_True: Boolean;
-      end record;
+      end record with Size => 8;
       for Attributes use record
          Remote_Wakeup at 0 range 5..5;
          Self_Powered at 0 range 6..6;
          Set_True at 0 range 7..7;
       end record;
-      for Attributes'Size use 8;
+      pragma Convention(C_Pass_by_Copy, Attributes);
 
       type Descriptor is record
          bLength: Unsigned_8;
@@ -360,13 +374,13 @@ package USB.Protocol is
          Transfer_Type: Endpoint_Descriptors.Transfer_Type;
          Iso_Sync_Type: Endpoint_Descriptors.Iso_Sync_Type;
          Iso_Usage_Type: Endpoint_Descriptors.Iso_Usage_Type;
-      end record;
+      end record with Size => 8;
       for Attributes use record
          Transfer_Type at 0 range 0..1;
          Iso_Sync_Type at 0 range 2..3;
          Iso_Usage_Type at 0 range 4..5;
       end record;
-      for Attributes'Size use 8;
+      pragma Convention(C_Pass_by_Copy, Attributes);
 
       type Descriptor is record
          bLength: Unsigned_8;
