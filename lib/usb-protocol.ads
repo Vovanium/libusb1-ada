@@ -1,10 +1,9 @@
+with Interfaces;
+use Interfaces;
 -- Definitions of standard USB protocol: Data structures, Values, etc
 package USB.Protocol is
 
    -- Those types are used in structures
-   type UInt8 is mod 2**8 with Size => 8;
-
-   type UInt16 is mod 2**16 with Size => 16;
 
    -- Per Table 9-3 USB 3-2 rev 1.0
    type Request_Type_Code is (
@@ -76,9 +75,9 @@ package USB.Protocol is
    type Control_Setup is record
       bmRequestType: Request_Type;
       bRequest: Request_Code;
-      wValue: UInt16;
-      wIndex: UInt16;
-      wLength: UInt16;
+      wValue: Unsigned_16;
+      wIndex: Unsigned_16;
+      wLength: Unsigned_16;
    end record;
 
    ---- Descriptors
@@ -137,29 +136,29 @@ package USB.Protocol is
 
    -- Per Table 9-11 of USB 3.2 rev 1.0
    type Device_Descriptor is record
-      bLength: UInt8;
+      bLength: Unsigned_8;
       bDescriptorType: Descriptor_Type;
-      bcdUSB: UInt16;
+      bcdUSB: Unsigned_16;
       bDeviceClass: Class_Code;
-      bDeviceSubClass: UInt8; -- Should be distinct type
-      bDeviceProtocol: UInt8; -- Should be distinct type
-      bMaxPacketSize0: UInt8;
+      bDeviceSubClass: Unsigned_8; -- Should be distinct type
+      bDeviceProtocol: Unsigned_8; -- Should be distinct type
+      bMaxPacketSize0: Unsigned_8;
       idVendor: Vendor_Id;
       idProduct: Product_Id;
-      bcdDevice: UInt16;
-      iManufacturer: UInt8;
-      iProduct: UInt8;
-      iSerialNumber: UInt8;
-      bNumConfigurations: UInt8;
+      bcdDevice: Unsigned_16;
+      iManufacturer: Unsigned_8;
+      iProduct: Unsigned_8;
+      iSerialNumber: Unsigned_8;
+      bNumConfigurations: Unsigned_8;
    end record with Size => 18*8;
    pragma Convention(C, Device_Descriptor);
 
    -- Per Table 9-12 of USB 3.2 rev 1.0
    type BOS_Descriptor is record
-      bLength: UInt8;
+      bLength: Unsigned_8;
       bDescriptorType: Descriptor_Type;
-      wTotalLength: UInt16;
-      bNumDeviceCaps: UInt8;
+      wTotalLength: Unsigned_16;
+      bNumDeviceCaps: Unsigned_8;
       -- Dev_Capability: BOS_Dev_Capability_Descriptor_Array;
    end record with Size => 5*8;
    pragma Convention(C, BOS_Descriptor);
@@ -194,7 +193,7 @@ package USB.Protocol is
 
    -- Per Table 9-13 of USB 3.2 rev 1.0
    type BOS_Device_Capability_Descriptor is record
-      bLength: UInt8;
+      bLength: Unsigned_8;
       bDescriptorType: Descriptor_Type;
       bDevCapabilityType: BOS_Device_Capability_Type;
       -- Dev_Capability_Data: BOS_Dev_Capability_Data_Array;
@@ -214,7 +213,7 @@ package USB.Protocol is
       pragma Warnings (On, "24 bits of ""Attributes"" unused");
 
       type Descriptor is record
-         bLength: UInt8;
+         bLength: Unsigned_8;
          bDescriptorType: Descriptor_Type;
          bDevCapabilityType: BOS_Device_Capability_Type;
          bmAttributes: Attributes;
@@ -264,14 +263,14 @@ package USB.Protocol is
       );
 
       type Descriptor is record
-         bLength: UInt8;
+         bLength: Unsigned_8;
          bDescriptorType: Descriptor_Type;
          bDevCapabilityType: BOS_Device_Capability_Type;
          bmAttributes: Attributes;
          wSpeedsSupported: Speeds_Supported;
          bFunctionalitySupport: Functionality_Support;
-         bU1DevExitLat: UInt8;
-         bU2DevExitLat: UInt16;
+         bU1DevExitLat: Unsigned_8;
+         bU2DevExitLat: Unsigned_16;
       end record with Size => 10*8;
       pragma Convention(C, Descriptor);
    end Superspeed_USB_Device_Capability_Descriptors;
@@ -281,13 +280,13 @@ package USB.Protocol is
 
    -- Per Table 9-17 of USB 2.3 rev 1.0
    package Container_Id_Descriptors is
-      type UUID is array (0..15) of UInt8;
+      type UUID is array (0..15) of Unsigned_8;
 
       type Descriptor is record
-         bLength: UInt8;
+         bLength: Unsigned_8;
          bDescriptorType: Descriptor_Type;
          bDevCapabilityType: BOS_Device_Capability_Type;
-         bReserved: UInt8;
+         bReserved: Unsigned_8;
          ContainerID: UUID;
       end record with Size => 20*8;
       pragma Convention(C, Descriptor);
@@ -310,14 +309,14 @@ package USB.Protocol is
       for Attributes'Size use 8;
 
       type Descriptor is record
-         bLength: UInt8;
-         bDescriptorType: USB.Protocol.Descriptor_Type;
-         wTotalLength: UInt16;
-         bNumInterfaces: UInt8;
-         bConfigurationValue: UInt8;
-         iConfiguration: UInt8;
+         bLength: Unsigned_8;
+         bDescriptorType: Descriptor_Type;
+         wTotalLength: Unsigned_16;
+         bNumInterfaces: Unsigned_8;
+         bConfigurationValue: Unsigned_8;
+         iConfiguration: Unsigned_8;
          bmAttributes: Attributes;
-         bMaxPower: Uint8;
+         bMaxPower: Unsigned_8;
       end record with Size => 9*8;
    end Configuration_Descriptors;
 
@@ -326,15 +325,15 @@ package USB.Protocol is
    -- Per Table 9-24 of USB 2.3 rev 1.0
    package Interface_Descriptors is
       type Descriptor is record
-         bLength: UInt8;
+         bLength: Unsigned_8;
          bDescriptorType: Descriptor_Type;
-         bInterfaceNumber: UInt8;
-         bAlternateSetting: UInt8;
-         bNumEndpoints: UInt8;
+         bInterfaceNumber: Unsigned_8;
+         bAlternateSetting: Unsigned_8;
+         bNumEndpoints: Unsigned_8;
          bInterfaceClass: Class_Code;
-         bInterfaceSubClass: UInt8;
-         bInterfaceProtocol: UInt8;
-         iInterface: UInt8;
+         bInterfaceSubClass: Unsigned_8;
+         bInterfaceProtocol: Unsigned_8;
+         iInterface: Unsigned_8;
       end record with Size => 9*8;
    end Interface_Descriptors;
 
@@ -386,12 +385,12 @@ package USB.Protocol is
       for Attributes'Size use 8;
 
       type Descriptor is record
-         bLength: UInt8;
+         bLength: Unsigned_8;
          bDescriptorType: Descriptor_Type;
          bEndpointAddress: Endpoint_Address;
          bmAttributes: Attributes;
-         wMaxPacketSize: UInt16;
-         bInterval: UInt8;
+         wMaxPacketSize: Unsigned_16;
+         bInterval: Unsigned_8;
       end record with Size => 7*8;
       pragma Convention(C, Descriptor);
    end Endpoint_Descriptors;
@@ -405,11 +404,11 @@ package USB.Protocol is
       pragma Convention(C, Attributes);
 
       type Descriptor is record
-         bLength: UInt8;
+         bLength: Unsigned_8;
          bDescriptorType: Descriptor_Type;
-         bMaxBurst: UInt8;
+         bMaxBurst: Unsigned_8;
          bmAttributes: Attributes;
-         wBytesPerInterval: UInt16;
+         wBytesPerInterval: Unsigned_16;
       end record with Size => 6*8;
       pragma Convention(C, Descriptor);
    end Superspeed_Endpoint_Companion_Descriptors;

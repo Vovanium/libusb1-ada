@@ -6,6 +6,7 @@ with System;
 with USB.Protocol;
 
 package USB.LibUSB1 is
+   use Interfaces;
    use Interfaces.C;
    use USB.Protocol;
 
@@ -275,10 +276,20 @@ package USB.LibUSB1 is
    );
    pragma Convention(C, Transfer_Type);
 
+   -- Those records corresponds to USB standard ones,
+   -- except several fields added by LibUSB.
+   -- Including standard record as element of this
+   -- could break compatibility due to C alignment issues.
    type Endpoint_Descriptor is record
-      Descriptor: USB.Protocol.Endpoint_Descriptor;
-      bRefresh: UInt8;
-      bSynchAddress: UInt8;
+      -- Descriptor: USB.Protocol.Endpoint_Descriptor;
+      bLength: Unsigned_8;
+      bDescriptorType: Descriptor_Type;
+      bEndpointAddress: Endpoint_Address;
+      bmAttributes: Endpoint_Descriptors.Attributes;
+      wMaxPacketSize: Unsigned_16;
+      bInterval: Unsigned_8;
+      bRefresh: Unsigned_8;
+      bSynchAddress: Unsigned_8;
       Extra: System.Address;
       Extra_Length: Integer;
    end record;
@@ -288,11 +299,11 @@ package USB.LibUSB1 is
     aliased Endpoint_Descriptor;
 
    Endpoint_Descriptor_Default_Terminator: constant Endpoint_Descriptor := (
-      (0, DT_Endpoint, 0, (
+      0, DT_Endpoint, 0, (
          Endpoint_Descriptors.Transfer_Type_Control,
          Endpoint_Descriptors.Iso_Sync_Type_None,
          Endpoint_Descriptors.Iso_Usage_Type_Data
-      ), 0, 0), 0, 0,
+      ), 0, 0, 0, 0,
       System.Null_Address, 0
    ); -- just for pointers to compile
 
@@ -303,7 +314,16 @@ package USB.LibUSB1 is
     Default_Terminator => Endpoint_Descriptor_Default_Terminator);
 
    type Interface_Descriptor is record
-      Descriptor: USB.Protocol.Interface_Descriptor;
+      -- Descriptor: USB.Protocol.Interface_Descriptor;
+      bLength: Unsigned_8;
+      bDescriptorType: Descriptor_Type;
+      bInterfaceNumber: Unsigned_8;
+      bAlternateSetting: Unsigned_8;
+      bNumEndpoints: Unsigned_8;
+      bInterfaceClass: Class_Code;
+      bInterfaceSubClass: Unsigned_8;
+      bInterfaceProtocol: Unsigned_8;
+      iInterface: Unsigned_8;
       Endpoint: Endpoint_Descriptor_Lists.Pointer;
       Extra: System.Address;
       Extra_Length: Integer;
@@ -316,8 +336,16 @@ package USB.LibUSB1 is
    end record;
 
    type Configuration_Descriptor is record
-      Descriptor: USB.Protocol.Configuration_Descriptor;
-      Interface_List: USB.LibUSB1.Interface_List;
+      -- Descriptor: USB.Protocol.Configuration_Descriptor;
+      bLength: Unsigned_8;
+      bDescriptorType: Descriptor_Type;
+      wTotalLength: Unsigned_16;
+      bNumInterfaces: Unsigned_8;
+      bConfigurationValue: Unsigned_8;
+      iConfiguration: Unsigned_8;
+      bmAttributes: Configuration_Descriptors.Attributes;
+      bMaxPower: Unsigned_8;
+      Interface_List: LibUSB1.Interface_List;
       Extra: System.Address;
       Extra_Length: Integer;
    end record;
@@ -360,14 +388,14 @@ package USB.LibUSB1 is
 
    function Get_Config_Descriptor(
       Dev: Device_Access;
-      Config_Index: UInt8;
+      Config_Index: Unsigned_8;
       Config: out Configuration_Descriptor_Access
    ) return Status;
    pragma Import(C, Get_Config_Descriptor, "libusb_get_config_descriptor");
 
    function Get_Config_Descriptor_by_Value(
       Dev: Device_Access;
-      bConfigurationValue: UInt8;
+      bConfigurationValue: Unsigned_8;
       Config: out Configuration_Descriptor_Access
    ) return Status;
    pragma Import(C, Get_Config_Descriptor_by_Value,
@@ -378,7 +406,7 @@ package USB.LibUSB1 is
 
    function Get_SS_Endpoint_Companion_Descriptor(
       Ctx: Context_Access;
-      Endpoint: access Endpoint_Descriptor;
+      Endpoint: access constant Endpoint_Descriptor;
       Ep_Comp: out SS_Endpoint_Companion_Descriptor_Access
    ) return Status;
    pragma Import(C, Get_SS_Endpoint_Companion_Descriptor,
@@ -443,7 +471,7 @@ package USB.LibUSB1 is
 
    function Get_String_Descriptor_ASCII(
       Dev: Device_Handle_Access;
-      Desc_Index: UInt8;
+      Desc_Index: Unsigned_8;
       Data: Char_Array;
       Length: Integer
    ) return Integer;
