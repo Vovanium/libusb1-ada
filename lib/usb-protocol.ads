@@ -11,7 +11,7 @@ package USB.Protocol is
    );
    for Transfer_Direction use (0, 1);
 
-
+   -- This cannot be made record due to argument passing convention
    type Request_Type is mod 2**8;
    for Request_Type'Size use 8;
    pragma Convention(C, Request_Type);

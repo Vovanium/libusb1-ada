@@ -4,11 +4,11 @@ with Interfaces.C.Pointers;
 with Interfaces.C.Strings;
 with System;
 with USB.Protocol;
+use Interfaces;
+use Interfaces.C;
+use USB.Protocol;
 
 package USB.LibUSB1 is
-   use Interfaces;
-   use Interfaces.C;
-   use USB.Protocol;
 
    ---- Library initialisation and finalisation
 
@@ -477,5 +477,88 @@ package USB.LibUSB1 is
    ) return Integer;
    pragma Import(C, Get_String_Descriptor_ASCII,
       "libusb_get_string_descriptor_ascii");
+
+   ---- Device hotplug event notification
+
+   Hotplug_Match_Any: constant Integer := -1;
+
+   type Hotplug_Callback_Handle is new Integer;
+
+   type Hotplug_Event is (
+      Hotplug_Event_Device_Arrived,
+      Hotplug_Event_Device_Left
+   );
+   for Hotplug_Event use (
+      Hotplug_Event_Device_Arrived => 16#01#,
+      Hotplug_Event_Device_Left => 16#02#
+   );
+   pragma Convention(C, Hotplug_Event);
+
+   type Hotplug_Flag is new Unsigned; -- cannot make it stucture
+   Hotplug_No_Flags: constant Hotplug_Flag := 0;
+   Hotplug_Enumerate: constant Hotplug_Flag := 1 * 2**0;
+
+   type Hotplug_Callback_Fn is access function(
+      Ctx: Context_Access;
+      Device: Device_Access;
+      Event: Hotplug_Event;
+      User_Data: System.Address
+   ) return Integer;
+   pragma Convention(C, Hotplug_Callback_Fn);
+
+   function Hotplug_Register_Callback(
+      Ctx: Context_Access;
+      events: Hotplug_Event;
+      flags: Hotplug_Flag;
+      Vendor: Integer;
+      Product: Integer;
+      Dev_Class: Integer;
+      Cb_Fn: Hotplug_Callback_Fn;
+      User_Data: System.Address;
+      Handle: out Hotplug_Callback_Handle
+   ) return Status;
+   pragma Import(C, Hotplug_Register_Callback,
+      "libusb_hotplug_register_callback");
+
+   function Hotplug_Deregister_Callback(
+      Ctx: Context_Access;
+      Handle: Hotplug_Callback_Handle
+   ) return Status;
+   pragma Import(C, Hotplug_Deregister_Callback,
+      "libusb_hotplug_deregister_callback");
+
+   ---- Synchronous deivce I/O
+
+   function Control_Transfer(
+      Dev_Handle: Device_Handle_Access;
+      bmRequestType: Request_Type;
+      bRequest: Request_Code;
+      wValue: Unsigned_16;
+      wIndex: Unsigned_16;
+      data: System.Address;
+      wLength: Unsigned_16;
+      Timeout: Unsigned
+   ) return Integer;
+   pragma Import(C, Control_Transfer, "libusb_control_transfer");
+
+   function Bulk_Transfer(
+      Dev_Handle: Device_Handle_Access;
+      Endpoint: Unsigned_Char;
+      Data: System.Address;
+      Length: Integer;
+      Transferres: out Integer;
+      Timeout: Unsigned
+   ) return Integer;
+   pragma Import(C, Bulk_Transfer, "libusb_bulk_transfer");
+
+   function Interrupt_Transfer(
+      Dev_Handle: Device_Handle_Access;
+      Endpoint: Unsigned_Char;
+      Data: System.Address;
+      Length: Integer;
+      Transferres: out Integer;
+      Timeout: Unsigned
+   ) return Integer;
+   pragma Import(C, Interrupt_Transfer, "libusb_interrupt_transfer");
 
 end USB.LibUSB1;
