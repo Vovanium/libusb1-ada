@@ -473,8 +473,8 @@ package USB.LibUSB1 is
       Dev: Device_Handle_Access;
       Desc_Index: Unsigned_8;
       Data: Char_Array;
-      Length: Integer
-   ) return Integer;
+      Length: int
+   ) return int;
    pragma Import(C, Get_String_Descriptor_ASCII,
       "libusb_get_string_descriptor_ascii");
 
@@ -503,16 +503,16 @@ package USB.LibUSB1 is
       Device: Device_Access;
       Event: Hotplug_Event;
       User_Data: System.Address
-   ) return Integer;
+   ) return int;
    pragma Convention(C, Hotplug_Callback_Fn);
 
    function Hotplug_Register_Callback(
       Ctx: Context_Access;
       events: Hotplug_Event;
       flags: Hotplug_Flag;
-      Vendor: Integer;
-      Product: Integer;
-      Dev_Class: Integer;
+      Vendor: int;
+      Product: int;
+      Dev_Class: int;
       Cb_Fn: Hotplug_Callback_Fn;
       User_Data: System.Address;
       Handle: out Hotplug_Callback_Handle
@@ -526,6 +526,247 @@ package USB.LibUSB1 is
    ) return Status;
    pragma Import(C, Hotplug_Deregister_Callback,
       "libusb_hotplug_deregister_callback");
+
+   ---- Asynchronous device I/O
+   type Transfer_Status is (
+      Transfer_Completed,
+      Transfer_Error,
+      Transfer_Timed_Out,
+      Transfer_Cancelled,
+      Transfer_Stall,
+      Transfer_No_Device,
+      Transfer_Overflow
+   );
+   pragma Convention(C, Transfer_Status);
+
+   type Iso_Packet_Descriptor is record
+      Length: unsigned;
+      Actual_Length: unsigned;
+      Status: Transfer_Status;
+   end record;
+   pragma Convention(C, Iso_Packet_Descriptor);
+
+   type Transfer_Flags is record
+      Short_Not_Ok: Boolean;
+      Free_Buffer: Boolean;
+      Free_Transfer: Boolean;
+      Add_Zero_Packet: Boolean;
+   end record;
+   for Transfer_Flags use record
+      Short_Not_Ok at 0 range 0 .. 0;
+      Free_Buffer at 0 range 1 .. 1;
+      Free_Transfer at 0 range 2 .. 2;
+      Add_Zero_Packet at 0 range 3 .. 3;
+   end record;
+   for Transfer_Flags'Size use 8;
+   pragma Convention(C_Pass_by_Copy, Transfer_Flags);
+
+   type Transfer;
+
+   type Transfer_Cb_Fn is access procedure(A_Transfer: Transfer);
+   pragma Convention(C, Transfer_Cb_Fn);
+
+   type Iso_Packet_Descriptor_Array is array (0 .. -1) of Iso_Packet_Descriptor;
+
+   type Transfer is record
+      Dev_Handle: Device_Handle_Access;
+      Flags: Transfer_Flags;
+      Endpoint: Unsigned_8;
+      A_Type: Unsigned_8; -- Transfer_type
+      Timeout: Unsigned;
+      Status: Transfer_Status;
+      Length: int;
+      Actual_Length: int;
+      Callback: Transfer_Cb_Fn;
+      User_Data: System.Address;
+      Buffer: System.Address;
+      Num_Iso_Packets: int;
+      Iso_Packet_Desc: Iso_Packet_Descriptor_Array;
+   end record;
+   pragma Convention(C, Transfer);
+
+   type Transfer_Access is access Transfer;
+
+   function Alloc_Streams(
+      Dev: Device_Handle_Access;
+      Num_Streams: Unsigned_32;
+      Endpoints: System.Address;
+      Num_Endpoints: int
+   ) return int;
+   pragma Import(C, Alloc_Streams, "libusb_alloc_streams");
+
+   function Free_Streams(
+      Dev: Device_Handle_Access;
+      Endpoints: System.Address;
+      Num_Endpoints: int
+   ) return int;
+   pragma Import(C, Free_Streams, "libusb_free_streams");
+
+   function Alloc_Transfer(
+      Iso_Packets: int
+   ) return Transfer_Access;
+   pragma Import(C, Alloc_Transfer, "libusb_alloc_transfer");
+
+   procedure Free_Transfer(
+      A_Transfer: Transfer_Access
+   );
+   pragma Import(C, Free_Transfer, "libusb_free_transfer");
+
+   function Submit_Transfer(
+      A_Transfer: Transfer_Access
+   ) return int;
+   pragma Import(C, Submit_Transfer, "libusb_submit_transfer");
+
+   function Cancel_Transfer(
+      A_Transfer: Transfer_Access
+   ) return int;
+   pragma Import(C, Cancel_Transfer, "libusb_cancel_transfer");
+
+   procedure Transfer_Set_Stream_Id(
+      A_Transfer: Transfer_Access;
+      Stream_Id: Unsigned_32
+   );
+   pragma Import(C, Transfer_Set_Stream_Id, "libusb_transfer_set_stream_id");
+
+   function Transfer_Get_Stream_Id(
+      A_Transfer: Transfer_Access
+   ) return Unsigned_32;
+   pragma Import(C, Transfer_Get_Stream_Id, "libusb_transfer_get_stream_id");
+
+   ---- Polling and timing
+
+   type PollFD is record
+      FD: int;
+      Events: short;
+   end record;
+   pragma Convention(C, PollFD);
+
+   type PollFD_Access is access constant PollFD;
+   pragma Convention(C, PollFD_Access);
+
+   type PollFD_Access_Array is array(Integer range <>) of aliased PollFD_Access;
+   package PollFD_Access_Lists is new Interfaces.C.Pointers(
+    Index => Integer,
+    Element => PollFD_Access,
+    Element_Array => PollFD_Access_Array,
+    Default_Terminator => null);
+
+
+   type PollFD_Added_Cb is access procedure(
+      FD: int;
+      Events: short;
+      User_Data: System.Address
+   );
+   pragma Convention(C, PollFD_Added_Cb);
+
+   type PollFD_Removed_Cb is access procedure(
+      FD: int;
+      User_Data: System.Address
+   );
+   pragma Convention(C, PollFD_Removed_Cb);
+
+   function Try_Lock_Events(
+      Ctx: Context_Access
+   ) return int;
+   pragma Import(C, Try_Lock_Events, "libusb_try_lock_events");
+
+   procedure Lock_Events(
+      Ctx: Context_Access
+   );
+   pragma Import(C, Lock_Events, "libusb_lock_events");
+
+   procedure Unlock_Events(
+      Ctx: Context_Access
+   );
+   pragma Import(C, Unlock_Events, "libusb_unlock_events");
+
+   function Event_Handling_Ok(
+      Ctx: Context_Access
+   ) return int;
+   pragma Import(C, Event_Handling_Ok, "libusb_event_handling_ok");
+
+   function Event_Handling_Active(
+      Ctx: Context_Access
+   ) return int;
+   pragma Import(C, Event_Handling_Active, "libusb_event_handling_active");
+
+   procedure Lock_Event_Waiters(
+      Ctx: Context_Access
+   );
+   pragma Import(C, Lock_Event_Waiters, "libusb_lock_event_waiters");
+
+   procedure Unlock_Event_Waiters(
+      Ctx: Context_Access
+   );
+   pragma Import(C, Unlock_Event_Waiters, "libusb_unlock_event_waiters");
+
+   type Timeval_Access is new System.Address; -- TODO: actual timeval
+
+   function Wait_For_Event(
+      Ctx: Context_Access;
+      Tv: Timeval_Access
+   ) return int;
+   pragma Import(C, Wait_For_Event, "libusb_wait_for_event");
+
+   function Handle_Events_Timeout_Completed(
+      Ctx: Context_Access;
+      Tv: Timeval_Access;
+      Completed: in out int
+   ) return int;
+   pragma Import(C, Handle_Events_Timeout_Completed,
+      "libusb_handle_events_timeout_completed");
+
+   function Handle_Events_Timeout(
+      Ctx: Context_Access;
+      Tv: Timeval_Access
+   ) return int;
+   pragma Import(C, Handle_Events_Timeout, "libusb_handle_events_timeout");
+
+   function Handle_Events(
+     Ctx: Context_Access
+   ) return int;
+   pragma Import(C, Handle_Events, "libusb_handle_events");
+
+   function Handle_Events_Completed(
+      Ctx: Context_Access;
+      Completed: in out int
+   ) return int;
+   pragma Import(C, Handle_Events_Completed, "libusb_handle_events_completed");
+
+   function Handle_Events_Locked(
+      Ctx: Context_Access;
+      Tv: Timeval_Access
+   ) return int;
+   pragma Import(C, Handle_Events_Locked, "libusb_handle_events_locked");
+
+   function PollFDs_Handle_Timeouts(
+      Ctx: Context_Access
+   ) return int;
+   pragma Import(C, PollFDs_Handle_Timeouts, "libusb_pollfds_handle_timeouts");
+
+   function Get_Next_Timeout(
+      Ctx: Context_Access;
+      Tv: Timeval_Access
+   ) return int;
+   pragma Import(C, Get_Next_Timeout, "libusb_get_next_timeout");
+
+   procedure Set_PollFD_Notifiers(
+      Ctx: Context_Access;
+      Added_Cb: PollFD_Added_Cb;
+      Removed_Cb: PollFD_Removed_Cb;
+      User_Data: System.Address
+   );
+   pragma Import(C, Set_PollFD_Notifiers, "libusb_set_pollfd_notifiers");
+
+   function Get_PollFDs(
+      Ctx: Context_Access
+   ) return PollFD_Access_Lists.Pointer;
+   pragma Import(C, Get_PollFDs, "libusb_get_pollfds");
+
+   procedure Free_PollFDs(
+      PollFDs: PollFD_Access_Lists.Pointer
+   );
+   pragma Import(C, Free_PollFDs, "libusb_free_pollfds");
 
    ---- Synchronous deivce I/O
 
