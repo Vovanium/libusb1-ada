@@ -8,7 +8,6 @@ Bindings for libusb1 library are placed in ada package USB.Libusb1.
 All its entities are imported using their corresponding names,
 however several changes are made:
 - prefix "libusb_" is removed from all entities;
-- in every enumeration, common prefix to its value is removed;
 - pointer types got "_Access" suffix;
 - pointer array pointers implemented through instantion Interfaces.C.Pointers with "_Lists" suffix;
 - opaque pointers are implemented using System.Address;
@@ -18,11 +17,11 @@ however several changes are made:
 
 - [ ] Module Library initialization/deinitialization
   - [ ] Types
-    - [ ] version
+    - [x] version (under name Lib_Version)
     - [x] context (opaque)
     - [x] log_level
     - [ ] option
-  - [ ] Functions
+  - [ ] Subprograms
     - [x] init (under name Lib_Init)
     - [x] exit (under name Lib_Exit)
     - [x] set_debug
@@ -36,7 +35,7 @@ however several changes are made:
     - [ ] usb_2_0_extension_attributes
     - [ ] ss_usb_device_capability_attributes
     - [ ] bos_type
-  - [ ] Functions
+  - [x] Subprograms
     - [x] get_device_list
     - [x] free_device_list
     - [x] get_bus_number
@@ -66,8 +65,127 @@ however several changes are made:
     - [x] attach_kernel_driver
     - [x] set_auto_detach_kernel_driver
 - [ ] Module USB descriptors
+  - [ ] Types
+    - [ ] device_descriptor
+    - [x] endpoint_descriptor
+    - [x] interface_descriptor
+    - [x] interface (under name Interface_List)
+    - [x] config_descriptor (under name Configuration_Descriptor)
+    - [x] ss_endpoint_companion_descriptor
+    - [ ] bos_dev_capability_descriptor
+    - [x] bos_descriptor (in USB.Protocol)
+    - [ ] usb_2_0_dextension_descriptor
+    - [ ] ss_usb_device_capability_descriptor
+    - [x] ss_containter_id_descriptor (in USB.Protocol)
+    - [ ] class_code
+    - [ ] descriptor_type
+    - [ ] endpoint_direction
+    - [x] transfer_type
+    - [ ] iso_sync_type
+    - [ ] iso_usage_type
+  - [x] Subprograms
+    - [x] get_device_descriptor
+    - [x] get_active_config_descriptor
+    - [x] get_config_descriptor
+    - [x] get_config_descriptor_by_value
+    - [x] free_config_descriptor
+    - [x] get_ss_endpoint_companion_descriptor
+    - [x] free_ss_endpoint_companion_descrptor
+    - [x] get_bos_descriptor
+    - [x] free_bos_descriptor
+    - [x] get_usb_2_0_extension_descriptor
+    - [x] free_usb_2_0_extension_descriptor
+    - [x] get_ss_usb_device_capability_descriptor
+    - [x] free_ss_usb_device_capability_descriptor
+    - [x] get_container_id_descriptor
+    - [x] free_container_id_descriptor
+    - [x] get_string_descriptor_ascii
+    - [ ] get_descriptor (it is a static function in header file, need to reimplement)
+    - [ ] get_string_descriptor (it is a static function in header file, need to reimplement)
 - [ ] Module Synchronous device I/O
+  - [ ] Subprograms
+    - [ ] control_transfer
+    - [ ] bulk_transfer
+    - [ ] interrupt_transfer
 - [ ] Module Asynchronous device I/O
+  - [ ] Types
+    - [ ] control_setup
+    - [x] iso_packet_descriptor
+    - [x] transfer
+    - [x] transfer_cb_fn
+    - [x] transfer_status
+    - [x] transfer_flags
+  - [ ] Subprograms
+    - [x] alloc_streams
+    - [x] free_streams
+    - [ ] dev_mem_alloc
+    - [ ] dev_mem_free
+    - [x] alloc_transfer
+    - [x] free_transfer
+    - [x] submit_transfer
+    - [x] cancel_transfer
+    - [x] transfer_set_stream_id
+    - [x] transfer_get_stream_id
+    - [ ] control_transfer_get_data (static)
+    - [ ] control_transfer_get_setup (static)
+    - [ ] fill_control_transfer (static)
+    - [ ] fill_bulk_transfer (static)
+    - [ ] fill_bulk_stream_transfer (static)
+    - [ ] fill_interrupt_transfer (static)
+    - [ ] fill_iso_transfer (static)
+    - [ ] set_iso_packet_lengths (static)
+    - [ ] get_iso_packet_buffer (static)
+    - [ ] get_iso_packet_buffer_simple (static)
 - [ ] Module Polling and timing
-- [ ] Module Device hotplug event notification
+  - [x] Types
+    - [x] pollfd
+    - [x] pollfd_added_cb
+    - [x] pollfd_removed_cb
+  - [ ] Subprograms
+    - [x] try_lock_events
+    - [x] lock_events
+    - [x] unlock_events
+    - [x] event_handling_ok
+    - [x] event_handler_active
+    - [ ] interrupt_event_handler
+    - [x] lock_event_waiters
+    - [x] unlock_event_waiters
+    - [x] wait_for_events (timeval undefined)
+    - [x] handle_events_timeout_completed
+    - [x] handle_events_timeout
+    - [x] handle_events
+    - [x] handle_events_completed
+    - [x] handle_events_locked
+    - [x] pollfds_handle_timeouts
+    - [x] get_next_timeout
+    - [x] set_pollfd_notifiers
+    - [x] get_pollfds
+    - [x] free_polldfs
+- [x] Module Device hotplug event notification
+  - [x] Constants
+    - [x] HOTPLUG_MATCH_ANY
+  - [x] Types
+    - [x] hotplug_callback_handle
+    - [x] hotplug_callback_fn
+    - [x] hotplug_flag
+    - [x] hotplug_event
+  - [x] Subprograms
+    - [x] hotplug register_callback
+    - [x] hotplug_deregister_callback
 - [ ] Module Miscellaneous
+  - [x] Constants
+    - [x] API_Version
+  - [ ] Types
+    - [ ] standard_request
+    - [ ] request_type
+    - [ ] request_recipient
+    - [x] error (under name status) (it seems it coulb be redefined as a set of integer constants)
+    - [x] capability (under name lib_capability)
+  - [x] Subprograms
+    - [x] has_capability
+    - [x] error_name
+    - [x] get_version
+    - [x] setlocale
+    - [x] strerror
+  - [ ] Variables
+    - [ ] usbi_locale_supported (variable has no "libusb_" prefix)
