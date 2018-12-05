@@ -1,0 +1,16 @@
+project USB_Library is
+
+   for Source_Dirs use ("source/library/**");
+   for Object_Dir use "build";
+   for Library_Dir use "library";
+   for Library_Name use "usb";
+   for Library_Interface use ("USB", "USB.Protocol", "USB.LibUSB1");
+   for Languages use("Ada");
+
+   package Compiler is
+      for Default_Switches("ada") use ("-ggdb", "-O2", "-gnato", "-gnat12");
+   end Compiler;
+   package Linker is
+      for Default_Switches("ada") use ("-lusb-1.0");
+   end Linker;
+end USB_Library;

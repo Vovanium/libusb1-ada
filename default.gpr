@@ -1,6 +1,7 @@
+with "usb_library.gpr";
 project Default is
 
-   for Source_Dirs use (".", "tests/**", "lib/**");
+   for Source_Dirs use (".", "source/utilities/**");
    for Object_Dir use "./build";
    for Main use ("initexit.adb", "list_devices_c.adb");
    for Languages use ("Ada");
