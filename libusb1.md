@@ -26,15 +26,15 @@ however several changes are made:
     - [x] exit (under name Lib_Exit)
     - [x] set_debug
     - [ ] set_option (vararg function, so c wrappers are required)
-- [ ] Module Device handling and enumeration
-  - [ ] Types
+- [x] Module Device handling and enumeration
+  - [x] Types
     - [x] device (opaque)
     - [x] device_handle (opaque)
     - [x] speed
-    - [ ] supported_speed
-    - [ ] usb_2_0_extension_attributes
-    - [ ] ss_usb_device_capability_attributes
-    - [ ] bos_type
+    - [x] supported_speede (under name USB.Protocol.Superspeed_USB_Device_Capability_Descriptors.Speeds_Supported)
+    - [x] usb_2_0_extension_attributes (under name USB.Protocol.USB_2_0_Extension_Descriptors.Attributes)
+    - [x] ss_usb_device_capability_attributese (under name USB.Protocol.Superspeed_USB_Device_Capability_Descriptors.Attributes)
+    - [x] bos_type (under name USB.Protocol.BOS_Device_Capability_Type)
   - [x] Subprograms
     - [x] get_device_list
     - [x] free_device_list
@@ -66,23 +66,23 @@ however several changes are made:
     - [x] set_auto_detach_kernel_driver
 - [ ] Module USB descriptors
   - [ ] Types
-    - [ ] device_descriptor
+    - [x] device_descriptor (under name USB.Protocol.Device_Descriptor)
     - [x] endpoint_descriptor
     - [x] interface_descriptor
     - [x] interface (under name Interface_List)
     - [x] config_descriptor (under name Configuration_Descriptor)
     - [x] ss_endpoint_companion_descriptor
-    - [ ] bos_dev_capability_descriptor
+    - [x] bos_dev_capability_descriptor (under name USB.Protocol.BOS_Device_Capability_Descriptor)
     - [x] bos_descriptor (in USB.Protocol)
-    - [ ] usb_2_0_dextension_descriptor
-    - [ ] ss_usb_device_capability_descriptor
-    - [x] ss_containter_id_descriptor (in USB.Protocol)
-    - [ ] class_code
-    - [ ] descriptor_type
+    - [x] usb_2_0_extension_descriptor (under name USB.Protocol.USB_2_0_Extension_Descriptors.Descriptor)
+    - [x] ss_usb_device_capability_descriptor (under name USB.Protocol.Superspeed_USB_Device_Capability_Descriptor)
+    - [x] containter_id_descriptor (under name USB.Protocol.Container_Id_Descriptors.Descriptor)
+    - [x] class_code (under name USB.Protocol.Class_Code)
+    - [x] descriptor_type (under name USB.Protocol.Descriptor_Type)
     - [ ] endpoint_direction
     - [x] transfer_type
-    - [ ] iso_sync_type
-    - [ ] iso_usage_type
+    - [x] iso_sync_type (under name USB.Protocol.Endpoint_Desctiptors.Iso_Sync_Type)
+    - [x] iso_usage_type (under name USB.Protocol.Endpoint_Desctiptors.Iso_Usage_Type)
   - [x] Subprograms
     - [x] get_device_descriptor
     - [x] get_active_config_descriptor
@@ -102,14 +102,14 @@ however several changes are made:
     - [x] get_string_descriptor_ascii
     - [ ] get_descriptor (it is a static function in header file, need to reimplement)
     - [ ] get_string_descriptor (it is a static function in header file, need to reimplement)
-- [ ] Module Synchronous device I/O
-  - [ ] Subprograms
-    - [ ] control_transfer
-    - [ ] bulk_transfer
-    - [ ] interrupt_transfer
+- [x] Module Synchronous device I/O
+  - [x] Subprograms
+    - [x] control_transfer
+    - [x] bulk_transfer
+    - [x] interrupt_transfer
 - [ ] Module Asynchronous device I/O
-  - [ ] Types
-    - [ ] control_setup
+  - [x] Types
+    - [x] control_setup (under name USB.Protocol.Control_Setup)
     - [x] iso_packet_descriptor
     - [x] transfer
     - [x] transfer_cb_fn
@@ -175,10 +175,10 @@ however several changes are made:
 - [ ] Module Miscellaneous
   - [x] Constants
     - [x] API_Version
-  - [ ] Types
-    - [ ] standard_request
-    - [ ] request_type
-    - [ ] request_recipient
+  - [x] Types
+    - [x] standard_request (under name USB.Protocol.Standard_Request_Code)
+    - [x] request_type (under name USB.Protocol.Request_Type)
+    - [x] request_recipient (under name USB.Protocol.Request_Recipient)
     - [x] error (under name status) (it seems it coulb be redefined as a set of integer constants)
     - [x] capability (under name lib_capability)
   - [x] Subprograms
