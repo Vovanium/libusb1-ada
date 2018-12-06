@@ -685,10 +685,10 @@ package USB.LibUSB1 is
    ) return int;
    pragma Import(C, Event_Handling_Ok, "libusb_event_handling_ok");
 
-   function Event_Handling_Active(
+   function Event_Handler_Active(
       Ctx: Context_Access
    ) return int;
-   pragma Import(C, Event_Handling_Active, "libusb_event_handling_active");
+   pragma Import(C, Event_Handler_Active, "libusb_event_handler_active");
 
    procedure Lock_Event_Waiters(
       Ctx: Context_Access
